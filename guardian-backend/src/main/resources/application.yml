@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: guardian-backend
+  profiles:
+    default: local
+
+server:
+  port: 8080

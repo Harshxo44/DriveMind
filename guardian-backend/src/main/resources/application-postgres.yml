@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: ${GUARDIAN_DB_URL}
+    username: ${GUARDIAN_DB_USERNAME}
+    password: ${GUARDIAN_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
