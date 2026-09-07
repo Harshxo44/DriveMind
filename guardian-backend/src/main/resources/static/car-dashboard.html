@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Guardian — Car Head-Unit Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;700&display=swap');
+    body {
+      font-family: 'Chakra Petch', sans-serif;
+      background-color: #050811;
+      color: #f1f5f9;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hud-panel {
+      background: rgba(11, 17, 32, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.05);
+    }
+    .hud-danger {
+      background: rgba(153, 27, 27, 0.85);
+      border: 1px solid rgba(244, 63, 94, 0.6);
+      box-shadow: 0 0 30px rgba(244, 63, 94, 0.4);
+    }
+    .glow-text-cyan {
+      text-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+    }
+    .glow-text-rose {
+      text-shadow: 0 0 20px rgba(244, 63, 94, 0.8);
+    }
+    .hud-gauge-ring {
+      stroke-dasharray: 283;
+      stroke-dashoffset: 75;
+      transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen flex flex-col justify-between p-4 select-none">
+
+  <!-- TOP AUTOMOTIVE HUD HEADER BAR -->
+  <header class="w-full hud-panel rounded-2xl px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+        <i data-lucide="shield" class="w-6 h-6 text-slate-950 font-bold"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
+          GUARDIAN <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-mono border border-cyan-500/30">CO-DRIVER HUD</span>
+        </h1>
+        <p class="text-xs text-slate-400 font-mono flex items-center gap-2">
+          <span>VIN: MAT839219K92019</span>
+          <span class="text-cyan-400">|</span>
+          <span class="text-emerald-400 flex items-center gap-1">● CAN 500kbps ACTIVE</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Active Safety Profile & Clock -->
+    <div class="flex items-center gap-6">
+      <div class="text-right">
+        <span class="text-xs text-slate-400 uppercase font-semibold">Drive Mode</span>
+        <p class="text-sm font-bold text-cyan-400 tracking-wider">SPORT / GUARDIAN ARM</p>
+      </div>
+      <div class="h-8 w-px bg-slate-800"></div>
+      <div class="text-right">
+        <span id="hudTime" class="text-xl font-bold font-mono text-white">15:14:02</span>
+        <p class="text-xs text-slate-400">28°C OUTSIDE</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- EMERGENCY OVERHEAT ALERT OVERLAY (HIDDEN BY DEFAULT) -->
+  <div id="emergencyBanner" class="w-full hud-danger rounded-2xl p-4 flex items-center justify-between hidden animate-pulse">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-rose-500 flex items-center justify-center text-slate-950 font-extrabold">
+        <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-white tracking-wider glow-text-rose" id="emergencyTitle">CRITICAL ENGINE OVERHEAT DETECTED</h2>
+        <p class="text-xs text-rose-100 font-mono" id="emergencyDesc">Coolant temp is 108°C (> 105°C limit). Pull over safely immediately.</p>
+      </div>
+    </div>
+    <button onclick="dismissEmergency()" class="px-4 py-2 rounded-xl bg-slate-950 text-white text-xs font-bold border border-rose-400">
+      Acknowledge & Mute
+    </button>
+  </div>
+
+  <!-- MAIN HUD DISPLAY COCKPIT (3-COLUMN LAYOUT FOR CAR SCREENS) -->
+  <main class="flex-1 grid grid-cols-12 gap-4 my-3 overflow-hidden">
+
+    <!-- LEFT COLUMN: POWER & HEALTH METRICS -->
+    <div class="col-span-3 hud-panel rounded-2xl p-5 flex flex-col justify-between">
+      <div class="space-y-4">
+        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+          <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i> Powertrain Status
+        </h3>
+
+        <!-- Coolant Temp Gauge -->
+        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+              <i data-lucide="thermometer" class="w-4 h-4 text-amber-400"></i> Coolant Temp
+            </span>
+            <span id="hudCoolantVal" class="font-mono font-bold text-amber-400">89 °C</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div id="hudCoolantBar" class="bg-amber-400 h-full rounded-full transition-all duration-300" style="width: 55%;"></div>
+          </div>
+          <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+            <span>40°C</span>
+            <span>105°C MAX</span>
+          </div>
+        </div>
+
+        <!-- Battery 12V Gauge -->
+        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i> 12V Battery
+            </span>
+            <span id="hudBatteryVal" class="font-mono font-bold text-emerald-400">13.9 V</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div id="hudBatteryBar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: 80%;"></div>
+          </div>
+          <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+            <span>11.8V MIN</span>
+            <span>15.0V</span>
+          </div>
+        </div>
+
+        <!-- Fuel Level Gauge -->
+        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+              <i data-lucide="fuel" class="w-4 h-4 text-cyan-400"></i> Fuel Range
+            </span>
+            <span id="hudFuelVal" class="font-mono font-bold text-cyan-400">74 % (420 km)</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div id="hudFuelBar" class="bg-cyan-400 h-full rounded-full transition-all duration-300" style="width: 74%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Test Controls for Car Testing -->
+      <div class="pt-3 border-t border-slate-800 space-y-2">
+        <span class="text-[10px] text-slate-500 font-bold uppercase">Simulate Edge Overheat</span>
+        <button onclick="triggerOverheatSim()" class="w-full py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold">
+          Simulate 108°C Coolant Spike
+        </button>
+      </div>
+    </div>
+
+    <!-- CENTER COLUMN: HUGE SPEEDOMETER & TACHOMETER RINGS -->
+    <div class="col-span-6 hud-panel rounded-2xl p-6 flex flex-col items-center justify-between relative overflow-hidden">
+
+      <div class="w-full flex items-center justify-between text-slate-400 text-xs font-mono">
+        <span>MODE: DRIVE</span>
+        <span class="text-cyan-400 font-bold">GUARDIAN AI ACTIVE</span>
+        <span>GEAR: D4</span>
+      </div>
+
+      <!-- DIGITAL SPEEDOMETER & RPM RING DISPLAY -->
+      <div class="relative w-64 h-64 flex items-center justify-center my-auto">
+        <!-- Outer Tachometer Ring -->
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" stroke="rgba(30, 41, 59, 0.8)" stroke-width="6" fill="none" />
+          <circle id="hudRpmRing" class="hud-gauge-ring" cx="50" cy="50" r="45" stroke="#06b6d4" stroke-width="6" fill="none" stroke-linecap="round" />
+        </svg>
+
+        <!-- Center Digital Speed Text -->
+        <div class="absolute flex flex-col items-center justify-center text-center">
+          <span id="hudSpeed" class="text-7xl font-extrabold font-mono text-white tracking-tighter glow-text-cyan">68</span>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400 mt-1">KM / H</span>
+          <span id="hudRpmText" class="text-sm font-mono font-bold text-cyan-400 mt-1">2,450 RPM</span>
+        </div>
+      </div>
+
+      <!-- Live Driving Safety Indicator Bar -->
+      <div class="w-full glass-card p-3 rounded-xl flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+          <span class="text-slate-300 font-bold">Safety Index</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="font-mono text-emerald-400 font-extrabold text-sm">96 / 100</span>
+          <span class="text-[10px] text-slate-400 font-mono">0 HARSH BRAKES</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: HANDS-FREE VOICE ASSISTANT & NAVIGATION -->
+    <div class="col-span-3 hud-panel rounded-2xl p-5 flex flex-col justify-between">
+      <div class="space-y-4">
+        <h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
+          <i data-lucide="bot" class="w-4 h-4 text-cyan-400"></i> Co-Driver Voice Assistant
+        </h3>
+
+        <!-- Push to Talk Mic Container -->
+        <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-center space-y-3">
+          <button onclick="triggerHudVoice()" id="hudMicBtn" class="w-16 h-16 mx-auto rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 flex items-center justify-center shadow-xl shadow-cyan-500/30 transition-transform active:scale-95">
+            <i data-lucide="mic" class="w-8 h-8 text-white"></i>
+          </button>
+          <div>
+            <h4 id="hudVoiceTitle" class="text-xs font-bold text-white">Push to Talk</h4>
+            <p id="hudVoiceSub" class="text-[10px] text-slate-400 mt-0.5">Hands-free voice diagnostics</p>
+          </div>
+        </div>
+
+        <!-- AI Voice Output Box -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+          <span class="text-[10px] font-bold text-cyan-400 font-mono uppercase">Guardian Co-Driver Reply</span>
+          <p id="hudAiReply" class="text-slate-200 text-xs leading-relaxed font-medium">
+            "Engine speed 68 km/h. Coolant is 89°C. Powertrain sensors running clear."
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Route / Navigation Preview -->
+      <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-white flex items-center gap-1.5">
+            <i data-lucide="navigation" class="w-4 h-4 text-cyan-400"></i> Active Navigation
+          </span>
+          <span class="text-[10px] text-emerald-400 font-mono">14.2 km</span>
+        </div>
+        <p class="text-xs text-slate-300 font-medium">CyberHub ➔ IGI Airport T3</p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- BOTTOM CAN-BUS TELEMETRY SIGNAL TICKER -->
+  <footer class="w-full hud-panel rounded-2xl px-6 py-2 flex items-center justify-between text-xs font-mono text-slate-400">
+    <div class="flex items-center gap-4">
+      <span class="text-cyan-400 font-bold flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> OBD-II CAN-BUS
+      </span>
+      <span id="hudCanTicker">PID 0C (RPM): 2450 | PID 0D (SPEED): 68 | PID 05 (COOLANT): 89°C | PID 42 (BATTERY): 13.9V</span>
+    </div>
+    <span>GUARDIAN AI V1.0</span>
+  </footer>
+
+  <script>
+    const API_BASE = window.location.origin + '/api/v1';
+    let speed = 68;
+    let rpm = 2450;
+    let coolant = 89;
+    let battery = 13.9;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      updateHudClock();
+      setInterval(updateHudClock, 1000);
+      startHudSim();
+    });
+
+    function updateHudClock() {
+      const now = new Date();
+      document.getElementById('hudTime').innerText = now.toLocaleTimeString();
+    }
+
+    function startHudSim() {
+      setInterval(() => {
+        speed = Math.max(10, Math.min(160, speed + (Math.random() - 0.49) * 3));
+        rpm = Math.round(speed * 34 + (Math.random() - 0.5) * 80);
+
+        document.getElementById('hudSpeed').innerText = Math.round(speed);
+        document.getElementById('hudRpmText').innerText = Number(rpm).toLocaleString() + ' RPM';
+
+        // Update ring
+        const rpmPct = Math.min(1, rpm / 7000);
+        const offset = 283 - (283 * rpmPct * 0.75);
+        document.getElementById('hudRpmRing').style.strokeDashoffset = offset;
+
+        document.getElementById('hudCanTicker').innerText = `PID 0C (RPM): ${rpm} | PID 0D (SPEED): ${Math.round(speed)} | PID 05 (COOLANT): ${coolant}°C | PID 42 (BATTERY): ${battery}V`;
+      }, 1000);
+    }
+
+    async function triggerHudVoice() {
+      const btn = document.getElementById('hudMicBtn');
+      const title = document.getElementById('hudVoiceTitle');
+      const sub = document.getElementById('hudVoiceSub');
+
+      title.innerText = "Listening...";
+      sub.innerText = "Speak your question";
+      btn.classList.add('animate-pulse');
+
+      setTimeout(async () => {
+        btn.classList.remove('animate-pulse');
+        title.innerText = "Push to Talk";
+        sub.innerText = "Hands-free voice diagnostics";
+
+        try {
+          const res = await fetch(`${API_BASE}/ai/conversation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userQuery: "How is the vehicle doing?",
+              telemetry: { speedKmh: speed, rpm: rpm, coolantTempC: coolant, batteryVoltage: battery, fuelLevelPct: 74, throttlePositionPct: 24, dtcActive: [] }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            document.getElementById('hudAiReply').innerText = `"${data.spokenResponse}"`;
+
+            if ('speechSynthesis' in window) {
+              const u = new SpeechSynthesisUtterance(data.spokenResponse);
+              window.speechSynthesis.speak(u);
+            }
+          }
+        } catch (e) {
+          document.getElementById('hudAiReply').innerText = `"Vehicle speed ${Math.round(speed)} km/h. Coolant is ${coolant}°C and battery voltage is ${battery}V. All systems nominal."`;
+        }
+      }, 2000);
+    }
+
+    function triggerOverheatSim() {
+      coolant = 108;
+      document.getElementById('hudCoolantVal').innerText = '108 °C';
+      document.getElementById('hudCoolantBar').style.width = '100%';
+      document.getElementById('hudCoolantBar').className = 'bg-rose-500 h-full rounded-full';
+
+      // Trigger emergency banner short circuit
+      const banner = document.getElementById('emergencyBanner');
+      banner.classList.remove('hidden');
+
+      // AI Emergency voice alert
+      document.getElementById('hudAiReply').innerText = '"CRITICAL ALERT: Engine coolant has exceeded 105°C safe limit. Please pull over safely!"';
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance("Warning: Engine coolant is high at 108 degrees Celsius. Please pull over safely.");
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function dismissEmergency() {
+      coolant = 89;
+      document.getElementById('hudCoolantVal').innerText = '89 °C';
+      document.getElementById('hudCoolantBar').style.width = '55%';
+      document.getElementById('hudCoolantBar').className = 'bg-amber-400 h-full rounded-full';
+      document.getElementById('emergencyBanner').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

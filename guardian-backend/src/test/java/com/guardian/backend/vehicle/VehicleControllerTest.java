@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -22,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class VehicleControllerTest {
 
     @Autowired
@@ -37,20 +39,22 @@ class VehicleControllerTest {
     private VehicleRepository vehicleRepository;
 
     @Autowired
+    private com.guardian.backend.driver.DriverProfileRepository driverProfileRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
-        vehicleRepository.deleteAll();
-        userRepository.deleteAll();
-
-        User user = User.builder()
-                .name("Driver Tester")
-                .email("tester@guardian.ai")
-                .password(passwordEncoder.encode("password123"))
-                .role(Role.ROLE_DRIVER)
-                .build();
-        userRepository.save(user);
+        if (userRepository.findByEmail("tester@guardian.ai").isEmpty()) {
+            User user = User.builder()
+                    .name("Driver Tester")
+                    .email("tester@guardian.ai")
+                    .password(passwordEncoder.encode("password123"))
+                    .role(Role.ROLE_DRIVER)
+                    .build();
+            userRepository.save(user);
+        }
     }
 
     @Test

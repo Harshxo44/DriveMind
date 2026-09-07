@@ -3,16 +3,14 @@ package com.guardian.backend.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guardian.backend.auth.dto.LoginRequest;
 import com.guardian.backend.auth.dto.RegisterRequest;
-import com.guardian.backend.device.DeviceRepository;
 import com.guardian.backend.user.UserRepository;
-import com.guardian.backend.vehicle.VehicleRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class AuthControllerTest {
 
     @Autowired
@@ -31,24 +30,11 @@ class AuthControllerTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private VehicleRepository vehicleRepository;
-
-    @Autowired
-    private DeviceRepository deviceRepository;
-
-    @BeforeEach
-    void setUp() {
-        deviceRepository.deleteAll();
-        vehicleRepository.deleteAll();
-        userRepository.deleteAll();
-    }
-
     @Test
     void shouldRegisterUserSuccessfully() throws Exception {
         RegisterRequest request = new RegisterRequest(
                 "Harsh Driver",
-                "harsh@example.com",
+                "harsh-new@example.com",
                 "+919876543210",
                 "securePass123"
         );
@@ -59,7 +45,7 @@ class AuthControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.email").value("harsh@example.com"))
+                .andExpect(jsonPath("$.email").value("harsh-new@example.com"))
                 .andExpect(jsonPath("$.name").value("Harsh Driver"))
                 .andExpect(jsonPath("$.role").value("ROLE_DRIVER"));
     }
@@ -68,7 +54,7 @@ class AuthControllerTest {
     void shouldFailRegisterWhenEmailDuplicate() throws Exception {
         RegisterRequest request = new RegisterRequest(
                 "Harsh Driver",
-                "harsh@example.com",
+                "harsh-dup@example.com",
                 null,
                 "securePass123"
         );
@@ -89,7 +75,7 @@ class AuthControllerTest {
     void shouldLoginSuccessfully() throws Exception {
         RegisterRequest registerRequest = new RegisterRequest(
                 "Harsh Driver",
-                "harsh@example.com",
+                "harsh-login@example.com",
                 null,
                 "securePass123"
         );
@@ -99,21 +85,21 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isCreated());
 
-        LoginRequest loginRequest = new LoginRequest("harsh@example.com", "securePass123");
+        LoginRequest loginRequest = new LoginRequest("harsh-login@example.com", "securePass123");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.email").value("harsh@example.com"));
+                .andExpect(jsonPath("$.email").value("harsh-login@example.com"));
     }
 
     @Test
     void shouldFailLoginWithWrongPassword() throws Exception {
         RegisterRequest registerRequest = new RegisterRequest(
                 "Harsh Driver",
-                "harsh@example.com",
+                "harsh-wrong@example.com",
                 null,
                 "securePass123"
         );
@@ -123,7 +109,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isCreated());
 
-        LoginRequest loginRequest = new LoginRequest("harsh@example.com", "wrongPass");
+        LoginRequest loginRequest = new LoginRequest("harsh-wrong@example.com", "wrongPass");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

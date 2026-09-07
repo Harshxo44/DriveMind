@@ -2,13 +2,19 @@ package com.guardian.backend.driver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guardian.backend.driver.dto.UpdateDriverProfileRequest;
+import com.guardian.backend.user.Role;
+import com.guardian.backend.user.User;
+import com.guardian.backend.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -17,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class DriverProfileControllerTest {
 
     @Autowired
@@ -24,6 +31,30 @@ class DriverProfileControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private DriverProfileRepository driverProfileRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @BeforeEach
+    void setUp() {
+        driverProfileRepository.deleteAll();
+        if (userRepository.findByEmail("driver@drivemind.ai").isEmpty()) {
+            User user = User.builder()
+                    .name("Guardian Driver")
+                    .email("driver@drivemind.ai")
+                    .password(passwordEncoder.encode("password123"))
+                    .role(Role.ROLE_DRIVER)
+                    .enabled(true)
+                    .build();
+            userRepository.save(user);
+        }
+    }
 
     @Test
     @WithMockUser(username = "driver@drivemind.ai")
