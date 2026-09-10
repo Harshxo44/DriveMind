@@ -274,7 +274,4 @@ platform. The backend already provides the central domain model and API
 foundation; mobile, firmware, and AI components are being integrated around
 that foundation.
 
-## License
 
-No license has been declared yet. Add a project license before distributing
-Velora or accepting external contributions.
