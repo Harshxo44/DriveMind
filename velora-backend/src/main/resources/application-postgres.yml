@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: ${VELORA_DB_URL}
+    username: ${VELORA_DB_USERNAME}
+    password: ${VELORA_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false

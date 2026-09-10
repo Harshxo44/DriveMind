@@ -7,9 +7,9 @@ extern "C" {
 #endif
 
 // Guardian V1 128-bit BLE UUID Definitions
-#define GUARDIAN_SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define GUARDIAN_CHAR_TELEMETRY_UUID    "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-#define GUARDIAN_CHAR_COMMAND_UUID      "8ec94abe-f16b-48ed-a2b2-4d1a084c794e"
+#define VELORA_SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define VELORA_CHAR_TELEMETRY_UUID    "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define VELORA_CHAR_COMMAND_UUID      "8ec94abe-f16b-48ed-a2b2-4d1a084c794e"
 
 typedef struct {
     bool is_connected;

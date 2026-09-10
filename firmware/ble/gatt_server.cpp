@@ -14,8 +14,8 @@ void ble_server_init(const char *device_name_suffix) {
     g_ble_state.packets_sent = 0;
 
     printf("[BLE] Initialized GATT Server with Device Name: %s\n", g_device_name);
-    printf("[BLE] Service UUID: %s\n", GUARDIAN_SERVICE_UUID);
-    printf("[BLE] Telemetry NOTIFY Characteristic: %s\n", GUARDIAN_CHAR_TELEMETRY_UUID);
+    printf("[BLE] Service UUID: %s\n", VELORA_SERVICE_UUID);
+    printf("[BLE] Telemetry NOTIFY Characteristic: %s\n", VELORA_CHAR_TELEMETRY_UUID);
     printf("[BLE] Advertising Started...\n");
 }
 
